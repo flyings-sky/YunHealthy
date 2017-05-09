@@ -15,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -36,7 +35,7 @@ import wang.fly.com.yunhealth.DataBasePackage.SignUserData;
 import wang.fly.com.yunhealth.MVP.Bases.MVPBaseActivity;
 import wang.fly.com.yunhealth.MVP.Presenters.ChangeMyDataActivityPresenter;
 import wang.fly.com.yunhealth.MVP.Views.ChangeMyDataActivityInterface;
-import wang.fly.com.yunhealth.MyViewPackage.ChooseImageDialog;
+import wang.fly.com.yunhealth.MyViewPackage.Dialogs.ChooseImageDialog;
 import wang.fly.com.yunhealth.R;
 import wang.fly.com.yunhealth.util.MyConstants;
 import wang.fly.com.yunhealth.util.SharedPreferenceHelper;
@@ -65,6 +64,7 @@ public class ChangeMyDataActivityCopy extends
     private LinearLayout mMainLayout;
     ChooseImageDialog chooseUserImageDialog;
     ProgressDialog progress;
+    ProgressDialog loadImage;
     Calendar mCalendar;
     Uri userImageUri;
     Context mContext = this;
@@ -113,16 +113,19 @@ public class ChangeMyDataActivityCopy extends
 
     @Override
     public void startSaveData() {
-        if (progress == null) {
-            progress = new ProgressDialog(mContext);
-            progress.setTitle("正在保存数据中...");
-            progress.show();
+        if (progress != null) {
+            progress.dismiss();
+            progress = null;
         }
+        progress = new ProgressDialog(mContext);
+        progress.setTitle("正在保存数据中...");
+        progress.show();
+
     }
 
     @Override
     public void saveSuccess(SignUserData userData) {
-        if (progress != null && progress.isShowing()){
+        if (progress != null && progress.isShowing()) {
             progress.dismiss();
             progress = null;
         }
@@ -134,7 +137,7 @@ public class ChangeMyDataActivityCopy extends
 
     @Override
     public void saveFailed() {
-        if (progress != null && progress.isShowing()){
+        if (progress != null && progress.isShowing()) {
             progress.dismiss();
             progress = null;
         }
@@ -157,7 +160,7 @@ public class ChangeMyDataActivityCopy extends
                                     Intent("android.media.action.IMAGE_CAPTURE");
                             // 获取文件
                             File tempFile = new File(PATH_ADD + "temp.jpg");
-                            if (tempFile.exists() && tempFile.isFile()){
+                            if (tempFile.exists() && tempFile.isFile()) {
                                 tempFile.delete();
                             }
                             getImageByCamera.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(tempFile));
@@ -223,9 +226,7 @@ public class ChangeMyDataActivityCopy extends
     @Override
     public void showImage(String url) {
         userImageUri = Uri.parse(url);
-        AlphaAnimation alphaAnimation = new AlphaAnimation(0.1f, 1.0f);
-        alphaAnimation.setDuration(200);
-        Glide.with(mContext).load(url).animate(alphaAnimation)
+        Glide.with(mContext).load(url).crossFade(200)
                 .placeholder(R.drawable.head_image_default)
                 .error(R.drawable.head_image_default)
                 .into(mUserImageShow);
@@ -235,7 +236,7 @@ public class ChangeMyDataActivityCopy extends
     public SignUserData getUser() {
         SignUserData result = new SignUserData();
         result.setUserName(mNameEdit.getText().toString());
-        if (userImageUri != null){
+        if (userImageUri != null) {
             result.setUserImage(userImageUri.toString());
         }
         result.setIdNumber(mIdCardEdit.getText().toString());
@@ -279,6 +280,33 @@ public class ChangeMyDataActivityCopy extends
         startActivity(intent);
     }
 
+    @Override
+    public void startLoadImage() {
+        if (loadImage != null) {
+            loadImage.dismiss();
+            loadImage = null;
+        }
+        loadImage = new ProgressDialog(mContext);
+        loadImage.setTitle("正在上传头像...");
+        loadImage.show();
+    }
+
+    @Override
+    public void loadSuccess() {
+        if (loadImage != null){
+            loadImage.dismiss();
+            Toast.makeText(mContext, "头像上传成功，保存后即可更改", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void loadFailed() {
+        if (loadImage != null){
+            loadImage.dismiss();
+            Toast.makeText(mContext, "头像上传失败，请检查您的网络配置", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void initView() {
         mBack = (ImageView) findViewById(R.id.back);
         mBack.setOnClickListener(this);
@@ -306,9 +334,9 @@ public class ChangeMyDataActivityCopy extends
             switch (requestCode) {
                 case ChangeMyDataActivityPresenter.REQUEST_CODE_CAPTURE_CAMERA: {
                     //直接拍照获取头像
-                    if (data == null){
+                    if (data == null) {
                         imageUri = Uri.fromFile(new File(PATH_ADD + "temp.jpg"));
-                    }else{
+                    } else {
                         imageUri = data.getData();
                         Log.d("test", "onActivityResult: 使用相机返回" + imageUri);
                         if (imageUri == null) {
@@ -337,7 +365,7 @@ public class ChangeMyDataActivityCopy extends
                         Toast.makeText(mContext, "error", Toast.LENGTH_SHORT).show();
                     } else {//截取图片完成
                         //上传图片
-                        File file = new File(MyConstants.PATH_ADD + "crop.jpg");
+                        File file = new File(MyConstants.CROP_PATH_USER_IMAGE);
                         file.renameTo(new File(MyConstants.PATH_ADD + "now.jpg"));
                         mPresenter.uploadFile(new File(MyConstants.PATH_ADD + "now.jpg"));
                     }

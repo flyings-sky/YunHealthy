@@ -6,7 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -60,8 +59,7 @@ public class UpLoadService extends Service{
                 }
                 MyDataBase myDataBase = new MyDataBase(getApplicationContext(),
                         "LocalStore.db", null, MyConstants.DATABASE_VERSION);
-                SQLiteDatabase database = myDataBase.getWritableDatabase();
-                int count = myDataBase.upLoadMeasureData(database, id);
+                int count = myDataBase.upLoadMeasureData(id);
                 if (count == MyDataBase.ERROR_LOAD){
                     makeANotification("测量信息上传失败");
                 }else if (count == 0){
@@ -108,8 +106,8 @@ public class UpLoadService extends Service{
                 .setAutoCancel(true)
                 .setOngoing(false)
                 .setDefaults(Notification.DEFAULT_ALL)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon_healthy))
-                .setSmallIcon(R.drawable.test_icon);
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_launcher);
         Notification no = mBuilder.build();
         manager.notify(1, no);
     }
