@@ -19,9 +19,9 @@ import wang.fly.com.yunhealth.Adapter.LoadItemAdapterForDynamic;
 import wang.fly.com.yunhealth.DataBasePackage.HeightAndWeight;
 import wang.fly.com.yunhealth.DataBasePackage.MyDataBase;
 import wang.fly.com.yunhealth.DataBasePackage.SignUserData;
-import wang.fly.com.yunhealth.MainActivity;
 import wang.fly.com.yunhealth.MyViewPackage.AutoLoadMoreRecyclerView;
 import wang.fly.com.yunhealth.R;
+import wang.fly.com.yunhealth.util.MyConstants;
 import wang.fly.com.yunhealth.util.UtilClass;
 
 import static cn.bmob.v3.Bmob.getApplicationContext;
@@ -49,10 +49,10 @@ public class DataDynamicFragment extends Fragment
     public View onCreateView(LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.data_dynamic_fragment,container,false);
+        View v = inflater.inflate(R.layout.fragment_data_dynamic,container,false);
         initView(v);
         mMyDataBase = new MyDataBase(getApplicationContext(),
-                "LocalStore.db", null, MainActivity.DATABASE_VERSION);
+                "LocalStore.db", null, MyConstants.DATABASE_VERSION);
         mSQLiteDatabase = mMyDataBase.getReadableDatabase();
         onRefresh();
         return v;
@@ -64,7 +64,7 @@ public class DataDynamicFragment extends Fragment
         downRefresh = (SwipeRefreshLayout) v.findViewById(R.id.refreshLayout);
         downRefresh.setOnRefreshListener(this);
         adapter = new LoadItemAdapterForDynamic(
-                R.layout.dynamic_recycle_item,
+                R.layout.item_dynamic_weight,
                 datas);
         recyclerView.setAdapter(adapter);
         recyclerView.setAutoLoadMoreEnable(true);
@@ -137,14 +137,14 @@ public class DataDynamicFragment extends Fragment
         }
         List<HeightAndWeight> result = new ArrayList<>();
         String sql= "select * from " + tableName +
-                " where userId = '" + MainActivity.userId + "' " +
+                " where userId = '" + MyConstants.userId + "' " +
                 " order by createTime desc " +
                 " Limit "+String.valueOf(PAGE_SIZE)+ " Offset " +String.valueOf(skip * PAGE_SIZE);
         Cursor rec = mSQLiteDatabase.rawQuery(sql, null);
         if (rec.moveToFirst()){
             do {
                 SignUserData login = new SignUserData();
-                login.setObjectId(MainActivity.userId);
+                login.setObjectId(MyConstants.userId);
                 HeightAndWeight data = new HeightAndWeight(
                         rec.getFloat(rec.getColumnIndex("height")),
                         rec.getFloat(rec.getColumnIndex("weight")),

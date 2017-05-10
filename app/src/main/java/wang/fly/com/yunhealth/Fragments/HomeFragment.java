@@ -22,14 +22,17 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+import wang.fly.com.yunhealth.Activity.MedicineActivity;
 import wang.fly.com.yunhealth.Activity.NewsActivity;
 import wang.fly.com.yunhealth.Adapter.MyAdapter;
 import wang.fly.com.yunhealth.Adapter.ResultListViewAdapter;
-import wang.fly.com.yunhealth.MyViewPackage.ResultDialog;
+import wang.fly.com.yunhealth.MyViewPackage.Dialogs.ResultDialog;
 import wang.fly.com.yunhealth.MyViewPackage.ScanView;
 import wang.fly.com.yunhealth.R;
-import wang.fly.com.yunhealth.util.MyRecyclerViewDivider;
+import wang.fly.com.yunhealth.util.RecyclerUtils.MyRecyclerViewDivider;
 import wang.fly.com.yunhealth.util.ResultMessage;
+
+import static wang.fly.com.yunhealth.Fragments.DataMedicalFragment.NOW_MEDICINE;
 
 /*
  * Created by 兆鹏 on 2016/11/2.
@@ -50,7 +53,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        homeView = inflater.inflate(R.layout.homefragment_layout,container,false);
+        homeView = inflater.inflate(R.layout.fragment_home,container,false);
         context = getContext();
         findView(homeView);
         scanView.setOnClickListener(this);
@@ -104,7 +107,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                         if(maps != null){
                             datas = maps;
                         }
-                        myAdapter = new MyAdapter(datas,R.layout.home_recycle_item_layout);
+                        myAdapter = new MyAdapter(datas,R.layout.item_home);
                         recyclerView.setAdapter(myAdapter);
                         recyclerView.addItemDecoration(new MyRecyclerViewDivider(context));
                         myAdapter.setOnItemClickListener(new MyAdapter.OnItemClickListener() {
@@ -119,7 +122,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
                                         startActivity(intent);
                                         break;
                                     case 2:
-                                        Toast.makeText(context,"点击了"+position,Toast.LENGTH_SHORT).show();
+                                        Intent intent1 = new Intent(getContext(), MedicineActivity.class);
+                                        intent1.putExtra("type", NOW_MEDICINE);
+                                        startActivity(intent1);
                                         break;
                                     case 3:
                                         Toast.makeText(context,"点击了"+position,Toast.LENGTH_SHORT).show();
@@ -133,7 +138,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
     }
 
     private void findView(View v) {
-        recyclerView = (RecyclerView) v.findViewById(R.id.home_recycle);
+        recyclerView = (RecyclerView) v.findViewById(R.id.home_recycle_menu);
         //layoutManager用来确定每一个item如何排列摆放，何时展示和隐藏
         gridLayoutManager = new GridLayoutManager(context,2);
         recyclerView.setLayoutManager(gridLayoutManager);
@@ -143,7 +148,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener{
         scanView = (ScanView) v.findViewById(R.id.scanButton);
         resultMessageList = new ArrayList<>();
         resultListViewAdapter = new ResultListViewAdapter(context,
-                R.layout.result_list_item, resultMessageList);
+                R.layout.item_result, resultMessageList);
         for (int i = 0; i < 10; i++) {
             ResultMessage resultMessage = new ResultMessage(i, "测试 " + i, true);
             resultMessageList.add(resultMessage);

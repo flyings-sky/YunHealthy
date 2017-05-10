@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -26,8 +27,8 @@ import wang.fly.com.yunhealth.DataBasePackage.MeasureData.MeasureXinDian;
 import wang.fly.com.yunhealth.DataBasePackage.MeasureData.MeasureXueTang;
 import wang.fly.com.yunhealth.DataBasePackage.MeasureData.MeasureXueYa;
 import wang.fly.com.yunhealth.DataBasePackage.MeasureData.MeasureXueYang;
-import wang.fly.com.yunhealth.MainActivity;
 import wang.fly.com.yunhealth.R;
+import wang.fly.com.yunhealth.util.MyConstants;
 import wang.fly.com.yunhealth.util.UtilClass;
 
 /**
@@ -37,6 +38,8 @@ import wang.fly.com.yunhealth.util.UtilClass;
 public class MyDataBase extends SQLiteOpenHelper {
     private static final String TAG = "MyDataBase";
     public static final int ERROR_LOAD = -1;
+    public static final int UPLOAD_NO_DATABASE = -1;
+    public static final int UPLOAD_SUCCESS = 0;
     public static final String CREATE_REPORT_MENU = "" +
             "create table report_menu (" +
             "id integer primary key autoincrement," +
@@ -66,6 +69,22 @@ public class MyDataBase extends SQLiteOpenHelper {
             "height float," +
             "weight float," +
             "createTime text)";
+
+    public static final String CREATE_MEDICINE_DETAIL = "" +
+            "create table MedicineDetail (" +
+            "id text primary key, " +
+            "userId text," +
+            "medicineName text," +
+            "medicinePicture text," +
+            "useType text," +
+            "tag text," +
+            "doctor text," +
+            "dayLength integer," +
+            "dayCount integer," +
+            "times text, " +
+            "doses text," +
+            "startTime text, " +
+            "unit text )";
     private Context context;
 
     public MyDataBase(Context context,
@@ -73,6 +92,7 @@ public class MyDataBase extends SQLiteOpenHelper {
                       SQLiteDatabase.CursorFactory factory,
                       int version) {
         super(context, name, factory, version);
+        Log.d(TAG, "MyDataBase: version = " + version);
         this.context = context;
     }
 
@@ -81,34 +101,65 @@ public class MyDataBase extends SQLiteOpenHelper {
         db.execSQL(CREATE_REPORT_MENU);
         db.execSQL(CREATE_MEASURE_DATA_CACHE);
         db.execSQL(CREATE_HEIGHT_WEIGHT_CACHE);
+        db.execSQL(CREATE_MEDICINE_DETAIL);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.d(TAG, "onUpgrade: old" + oldVersion);
+        Log.d(TAG, "onUpgrade: old = " + oldVersion);
+        Log.d(TAG, "onUpgrade: new = " + newVersion);
         switch (oldVersion) {
             case 1:
                 db.execSQL(CREATE_MEASURE_DATA_CACHE);
             case 2:
                 db.execSQL(CREATE_HEIGHT_WEIGHT_CACHE);
+            case 3:
+                db.execSQL(CREATE_MEDICINE_DETAIL);
             default:
         }
     }
 
+    public void insertMedicineDetail(SQLiteDatabase db,
+                                     String userId,
+                                     MedicineDetail medicine){
+        if (medicine == null || userId == null) {
+            return;
+        }
+        ContentValues values = new ContentValues();
+        values.clear();
+        values.put("id", medicine.getObjectId());
+        values.put("userId", userId);
+        values.put("medicineName", medicine.getMedicineName());
+        values.put("medicinePicture", medicine.getMedicinePicture());
+        values.put("useType", medicine.getUseType());
+        values.put("tag", medicine.getTag());
+        values.put("doctor", medicine.getDoctor());
+        values.put("dayLength", medicine.getDayLength());
+        values.put("dayCount", medicine.getDayCount());
+        values.put("times", Arrays.toString(medicine.getTimes().toArray()));
+        values.put("doses", Arrays.toString(medicine.getDoses().toArray()));
+        values.put("startTime", medicine.getStartTime().getDate());
+        values.put("unit", medicine.getUnit());
+        db.insert("MedicineDetail", null, values);
+    }
+    public void deleteMedicineDetail(SQLiteDatabase db, MedicineDetail medicine){
+
+    }
+
     /**
      * 向身高数据库中添加数据
-     * @param db
+     *
      * @param data
      * @param userId
      * @param date
      */
-    public void insertHeightAndWeight(SQLiteDatabase db,
-                                      HeightAndWeight data,
+    public void insertHeightAndWeight(HeightAndWeight data,
                                       String userId,
-                                      Date date){
-        if (data == null || userId == null){
+                                      Date date) {
+        if (data == null || userId == null) {
             return;
         }
+        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.clear();
         values.put("height", data.getHeight());
@@ -116,14 +167,17 @@ public class MyDataBase extends SQLiteOpenHelper {
         values.put("userId", userId);
         values.put("createTime", UtilClass.valueOfDate(date, "yyyy-MM-dd HH:MM:00"));
         db.insert("HeightWeightCache", null, values);
+        db.close();
     }
-    public void addOneMeasureData(SQLiteDatabase db,
+
+    public void addOneMeasureData(
                                   MeasureData measureData,
                                   int type,
                                   Date date, String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("userId", userId);
-        values.put("name", MainActivity.LABEL_STRING[type]);
+        values.put("name", MyConstants.LABEL_STRING[type]);
         values.put("type", type);
         values.put("average", measureData.getAverageData());
         values.put("max", measureData.getMaxData());
@@ -134,32 +188,61 @@ public class MyDataBase extends SQLiteOpenHelper {
         values.put("isMinDanger", measureData.getMinDanger());
         values.put("createTime", UtilClass.valueOfDate(date, null));
         db.insert("MeasureDataCache", null, values);
+        db.close();
     }
 
-    public boolean checkTodayWeight(SQLiteDatabase db, Date date, String userId){
-        if (db == null || date == null || userId == null){
-            return false;
+    public HeightAndWeight checkTodayWeight(Date date, String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        if (db == null || date == null || userId == null) {
+            return null;
         }
         Cursor cursor = db.rawQuery("select * from HeightWeightCache" +
                 " where userId = '" + userId + "'" +
                 " and createTime like '"
                 + UtilClass.valueOfDate(date, "yyyy-MM-dd 00:00:00").substring(0, 10) + "%'", null);
-        return cursor.moveToFirst();
+        if (cursor.moveToFirst()) {
+            HeightAndWeight data = new HeightAndWeight();
+            data.setHeight(cursor.getFloat(cursor.getColumnIndex("height")));
+            data.setWeight(cursor.getFloat(cursor.getColumnIndex("weight")));
+            db.close();
+            return data;
+        }
+        db.close();
+        return null;
+    }
+
+    public HeightAndWeight checkLastWeight(String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        if (db == null || userId == null) {
+            return null;
+        }
+        Cursor cursor = db.rawQuery("select * from HeightWeightCache" +
+                " where userId = '" + userId + "'" +
+                " order by createTime desc ", null);
+
+        if (cursor.moveToFirst()) {
+            HeightAndWeight data = new HeightAndWeight();
+            data.setHeight(cursor.getFloat(cursor.getColumnIndex("height")));
+            data.setWeight(cursor.getFloat(cursor.getColumnIndex("weight")));
+            db.close();
+            return data;
+        }
+        db.close();
+        return null;
     }
 
 
     /**
      * 查询一个数据，存在返回true，否则为false
      *
-     * @param database
      * @param type
      * @param date
      * @return
      */
-    public boolean checkOneMeasureDataCache(SQLiteDatabase database,
-                                            int type,
+    public boolean checkOneMeasureDataCache(int type,
                                             Date date,
                                             String userId) {
+        SQLiteDatabase database = this.getWritableDatabase();
         if (date == null || database == null || !database.isOpen() || userId == null) {
             return true;
         }
@@ -167,10 +250,12 @@ public class MyDataBase extends SQLiteOpenHelper {
                 "where createTime = " + "'" + UtilClass.valueOfDate(date, null) + " ' and "
                 + "type = " + type + " and userId = '" + userId + "'" +
                 "", null);
+        database.close();
         return cursor.moveToFirst();
     }
 
-    public void initMenuData(SQLiteDatabase db, String userId) {
+    public void initMenuData(String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
         if (userId == null) {
             return;
         }
@@ -614,14 +699,16 @@ public class MyDataBase extends SQLiteOpenHelper {
 
         db.insert("report_menu", null, values);
         values.clear();
+        db.close();
     }
 
 
-    public static final int UPLOAD_NO_DATABASE = -1;
-    public static final int UPLOAD_SUCCESS = 0;
 
-    public int upLoadMeasureData(SQLiteDatabase db, String objectId) {
+    public int upLoadMeasureData(String objectId) {
+        SQLiteDatabase db = this.getWritableDatabase();
         //检查网络状态
+        Log.d(TAG, "onUpgrade: old" + db.getVersion());
+
         if (db == null) {
             Log.d(TAG, "upLoadMeasureData: db is null");
             return ERROR_LOAD;
@@ -650,56 +737,56 @@ public class MyDataBase extends SQLiteOpenHelper {
                 );
                 measureData.setMeasureTime(new BmobDate(createTime));
                 switch (type) {
-                    case MainActivity.MEASURE_TYPE_XUEYANG: {
+                    case MyConstants.MEASURE_TYPE_XUEYANG: {
                         MeasureXueYang measureXueYang = new MeasureXueYang();
                         measureData.copyTo(measureXueYang);
                         measureXueYang.setOwner(owner);
                         datas.add(measureXueYang);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_MAIBO: {
+                    case MyConstants.MEASURE_TYPE_MAIBO: {
                         MeasureMaiBo measureMaiBo = new MeasureMaiBo();
                         measureData.copyTo(measureMaiBo);
                         measureMaiBo.setOwner(owner);
                         datas.add(measureMaiBo);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_XINDIAN: {
+                    case MyConstants.MEASURE_TYPE_XINDIAN: {
                         MeasureXinDian measureXinDian = new MeasureXinDian();
                         measureData.copyTo(measureXinDian);
                         measureXinDian.setOwner(owner);
                         datas.add(measureXinDian);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_TIWEN: {
+                    case MyConstants.MEASURE_TYPE_TIWEN: {
                         MeasureTiWen measureTiWen = new MeasureTiWen();
                         measureData.copyTo(measureTiWen);
                         measureTiWen.setOwner(owner);
                         datas.add(measureTiWen);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_FENCHEN: {
+                    case MyConstants.MEASURE_TYPE_FENCHEN: {
                         MeasureFenChen measureFenChen = new MeasureFenChen();
                         measureData.copyTo(measureFenChen);
                         measureFenChen.setOwner(owner);
                         datas.add(measureFenChen);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_NAODIAN: {
+                    case MyConstants.MEASURE_TYPE_NAODIAN: {
                         MeasureNaoDian measureNaoDian = new MeasureNaoDian();
                         measureData.copyTo(measureNaoDian);
                         measureNaoDian.setOwner(owner);
                         datas.add(measureNaoDian);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_XUEYA: {
+                    case MyConstants.MEASURE_TYPE_XUEYA: {
                         MeasureXueYa measureXueYa = new MeasureXueYa();
                         measureData.copyTo(measureXueYa);
                         measureXueYa.setOwner(owner);
                         datas.add(measureXueYa);
                         break;
                     }
-                    case MainActivity.MEASURE_TYPE_XUETANG: {
+                    case MyConstants.MEASURE_TYPE_XUETANG: {
                         MeasureXueTang measureXueTang = new MeasureXueTang();
                         measureData.copyTo(measureXueTang);
                         measureXueTang.setOwner(owner);
@@ -709,6 +796,7 @@ public class MyDataBase extends SQLiteOpenHelper {
                 }
             } while (cursor.moveToNext());
         } else {
+            db.close();
             return 0;
         }
         Log.d(TAG, "upLoadMeasureData: datas.size" + datas.size());
@@ -728,8 +816,10 @@ public class MyDataBase extends SQLiteOpenHelper {
         if (flag) {
             //有一批上传成功
             db.delete("MeasureDataCache", null, null);
+            db.close();
             return datas.size();
         } else {
+            db.close();
             return ERROR_LOAD;
         }
     }

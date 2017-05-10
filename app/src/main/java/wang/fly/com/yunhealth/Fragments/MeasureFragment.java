@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,7 +17,6 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -45,10 +43,10 @@ import java.util.UUID;
 import wang.fly.com.yunhealth.Adapter.RecycleAdapterForMeasureOnly;
 import wang.fly.com.yunhealth.DataBasePackage.MeasureData.MeasureData;
 import wang.fly.com.yunhealth.DataBasePackage.MyDataBase;
-import wang.fly.com.yunhealth.MainActivity;
-import wang.fly.com.yunhealth.MyViewPackage.InputBlueMacDialog;
+import wang.fly.com.yunhealth.MyViewPackage.Dialogs.InputBlueMacDialog;
 import wang.fly.com.yunhealth.R;
 import wang.fly.com.yunhealth.util.ClsUtils;
+import wang.fly.com.yunhealth.util.MyConstants;
 import wang.fly.com.yunhealth.util.UtilClass;
 
 import static android.app.Activity.RESULT_OK;
@@ -61,13 +59,11 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
     private TextView connectDevice;
     private RecyclerView recyclerView;
     InputBlueMacDialog dialog;
-    private GridLayoutManager gridLayoutManager;
     private Context context;
     private RecycleAdapterForMeasureOnly myAdapter;
     private ProgressBar load;
     private boolean isTryingConnecting = false;
     private MyDataBase myDataBase;
-    private SQLiteDatabase database;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothDevice theDestDevice;
     BroadcastReceiver receiver;
@@ -83,14 +79,14 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
     static final int MSG_START_CONNECT = 2;
     static final int MSG_READ_STRING = 3;
     static final int MSG_CONNECT_FAILED = 4;
-    private String deviceAddress;
+    private String deviceAddress = "98:D3:32:70:5A:44";
     private static final String TAG = "MeasureFragment";
     View mView;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.measurefragment_layout, container, false);
+        View v = inflater.inflate(R.layout.fragment_measure, container, false);
         context = getContext();
         mView = v;
         findView(v);
@@ -103,9 +99,9 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
         connectDevice = (TextView) v.findViewById(R.id.connect_device);
         load = (ProgressBar) v.findViewById(R.id.load);
         measureDataList = new ArrayList<>();
-        for (int i = 0; i < MainActivity.LABEL_STRING.length; i++) {
+        for (int i = 0; i < MyConstants.LABEL_STRING.length; i++) {
             MeasureData measure = new MeasureData();
-            measure.setName(MainActivity.LABEL_STRING[i]);
+            measure.setName(MyConstants.LABEL_STRING[i]);
             measureDataList.add(measure);
         }
         load.setVisibility(View.INVISIBLE);
@@ -116,14 +112,13 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
         d.setMoveDuration(0);
         d.setSupportsChangeAnimations(false);
         recyclerView.setItemAnimator(d);
-        myAdapter = new RecycleAdapterForMeasureOnly(R.layout.measure_data_show_item,
+        myAdapter = new RecycleAdapterForMeasureOnly(R.layout.item_measure_data_show,
                 context, measureDataList);
         recyclerView.setAdapter(myAdapter);
         //本地缓存所需要的初始化
         date = new Date();
         myDataBase = new MyDataBase(getActivity().getApplicationContext(),
-                "LocalStore.db", null, MainActivity.DATABASE_VERSION);
-        database = myDataBase.getWritableDatabase();
+                "LocalStore.db", null, MyConstants.DATABASE_VERSION);
 
     }
 
@@ -137,6 +132,10 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                                           /* 从intent中取得搜索结果数据 */
                         BluetoothDevice device = intent
                                 .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        Log.d("blue", "onReceive: name" + device.getName());
+                        Log.d("blue", "onReceive: address" + device.getAddress());
+                        Log.d("blue", "onReceive: state" + device.getBondState());
+
                         if (TextUtils.equals(device.getAddress(), deviceAddress)) {
                             theDestDevice = device;
                             if (theDestDevice.getBondState() == BluetoothDevice.BOND_NONE) {
@@ -263,28 +262,29 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                 String mac = sp.getString("macAddress", "");
                 dialog = new InputBlueMacDialog(context,
                         new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        dialog.dismiss();
-                        switch (view.getId()){
-                           case R.id.connect_mac_device:{
-                               String macAddress = dialog.getMacAddress();
-                               if (isMacAddress(macAddress)){
-                                   toToast("正在连接设备");
-                                   editor.putString("macAddress", macAddress);
-                                   editor.commit();
-                                   connectProc(macAddress);
-                               }else{
-                                   toToast("设备地址不合法");
-                               }
-                               break;
-                           }
-                           case R.id.cancel_action:{
-                               break;
-                           }
-                       }
-                    }
-                });
+                            @Override
+                            public void onClick(View view) {
+                                dialog.dismiss();
+                                switch (view.getId()){
+                                    case R.id.connect_mac_device:{
+                                        String macAddress = dialog.getMacAddress();
+                                        if (isMacAddress(macAddress)){
+                                            toToast("正在连接设备");
+                                            editor.putString("macAddress", macAddress);
+                                            editor.commit();
+                                            connectProc(macAddress);
+                                        }else{
+                                            toToast("设备地址不合法");
+                                        }
+                                        break;
+                                    }
+                                    case R.id.cancel_action:{
+                                        break;
+                                    }
+                                }
+                            }
+                        });
+                dialog.setMacAddress(deviceAddress);
                 dialog.showAtLocation(mView.findViewById(R.id.main_layout),
                         Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
                 dialog.setMacHint(mac);
@@ -613,19 +613,19 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                             if (data.length() == 8) {
                                 Log.d("workItem", "handleMessage: 血氧");
                                 Log.d("workItem", "handleMessage: 脉搏");
-                                checkMinuteAndCache(MainActivity.MEASURE_TYPE_XUEYANG, minute);
-                                checkMinuteAndCache(MainActivity.MEASURE_TYPE_MAIBO, minute);
+                                checkMinuteAndCache(MyConstants.MEASURE_TYPE_XUEYANG, minute);
+                                checkMinuteAndCache(MyConstants.MEASURE_TYPE_MAIBO, minute);
                                 //进行血氧的结果解析
                                 float result = UtilClass.valueOfHexString(data.substring(0, 2));
-                                temp = measureDataList.get(MainActivity.MEASURE_TYPE_XUEYANG);
+                                temp = measureDataList.get(MyConstants.MEASURE_TYPE_XUEYANG);
                                 if (result > 0 && result < 100 && compareData(temp, result)) {
-                                    myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_XUEYANG);
+                                    myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_XUEYANG);
                                 }
                                 //进行脉搏的结果解析
                                 result = UtilClass.valueOfHexString(data.substring(2, 4));
-                                temp = measureDataList.get(MainActivity.MEASURE_TYPE_MAIBO);
+                                temp = measureDataList.get(MyConstants.MEASURE_TYPE_MAIBO);
                                 if (result > 0 && result < 255 && compareData(temp, result)) {
-                                    myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_MAIBO);
+                                    myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_MAIBO);
                                 }
                             }
                             break;
@@ -636,12 +636,12 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                                 Log.d("workItem", "handleMessage: 心电");
                                 long now = Calendar.getInstance().getTimeInMillis();
                                 if (now - last >= 200) {
-                                    checkMinuteAndCache(MainActivity.MEASURE_TYPE_XINDIAN, minute);
+                                    checkMinuteAndCache(MyConstants.MEASURE_TYPE_XINDIAN, minute);
                                     int result = UtilClass.valueOfHexString(data);
-                                    temp = measureDataList.get(MainActivity.MEASURE_TYPE_XINDIAN);
+                                    temp = measureDataList.get(MyConstants.MEASURE_TYPE_XINDIAN);
                                     myAdapter.heartWavesView.drawNextPoint(result);
                                     if (compareData(temp, (float) (result))) {
-                                        myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_XINDIAN);
+                                        myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_XINDIAN);
                                     }
                                     last = now;
                                 }
@@ -652,12 +652,12 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                             //血糖
                             if (data.length() == 12) {
                                 Log.d("workItem", "handleMessage: 血糖");
-                                checkMinuteAndCache(MainActivity.MEASURE_TYPE_XUETANG, minute);
+                                checkMinuteAndCache(MyConstants.MEASURE_TYPE_XUETANG, minute);
                                 float result = UtilClass.valueOfHexString(
                                         data.substring(10, 12)) / 10.0f;
-                                temp = measureDataList.get(MainActivity.MEASURE_TYPE_XUETANG);
+                                temp = measureDataList.get(MyConstants.MEASURE_TYPE_XUETANG);
                                 if (result > 0 && result < 300 && compareData(temp, result)) {
-                                    myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_XUETANG);
+                                    myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_XUETANG);
                                 }
                             }
                             break;
@@ -666,12 +666,12 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                             //体温
                             if (data.length() == 4) {
                                 Log.d("workItem", "handleMessage: 体温");
-                                checkMinuteAndCache(MainActivity.MEASURE_TYPE_TIWEN, minute);
+                                checkMinuteAndCache(MyConstants.MEASURE_TYPE_TIWEN, minute);
                                 float result = UtilClass.valueOfHexString(data) / 100.0f;
-                                temp = measureDataList.get(MainActivity.MEASURE_TYPE_TIWEN);
+                                temp = measureDataList.get(MyConstants.MEASURE_TYPE_TIWEN);
                                 if (compareData(temp, result)) {
                                     //修改各项
-                                    myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_TIWEN);
+                                    myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_TIWEN);
                                 }
                             }
                             break;
@@ -680,11 +680,11 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
                             //粉尘
                             if (data.length() == 8) {
                                 Log.d("workItem", "handleMessage: 粉尘");
-                                checkMinuteAndCache(MainActivity.MEASURE_TYPE_FENCHEN, minute);
+                                checkMinuteAndCache(MyConstants.MEASURE_TYPE_FENCHEN, minute);
                                 float result = UtilClass.valueOfHexString(data) / 100.0f;
-                                temp = measureDataList.get(MainActivity.MEASURE_TYPE_FENCHEN);
+                                temp = measureDataList.get(MyConstants.MEASURE_TYPE_FENCHEN);
                                 if (result > 0 && result < 800 && compareData(temp, result)) {
-                                    myAdapter.notifyItemChanged(MainActivity.MEASURE_TYPE_FENCHEN);
+                                    myAdapter.notifyItemChanged(MyConstants.MEASURE_TYPE_FENCHEN);
                                 }
                             }
                             break;
@@ -736,13 +736,12 @@ public class MeasureFragment extends Fragment implements View.OnClickListener {
     public void checkMinuteAndCache(int type, int minute) {
         String userId = context.getSharedPreferences("LoginState",
                 Context.MODE_PRIVATE).getString("userId", null);
-        if (database.isOpen()
-                && minute % MainActivity.CACHE_TIME_LENGTH == 0
-                && !myDataBase.checkOneMeasureDataCache(database,
+        if (minute % MyConstants.CACHE_TIME_LENGTH == 0
+                && !myDataBase.checkOneMeasureDataCache(
                 type, date, userId)) {
             Log.d("Cache", "checkMinuteAndCache: cache + " +
-                    MainActivity.LABEL_STRING[type] + "\tminute" + minute);
-            myDataBase.addOneMeasureData(database,
+                    MyConstants.LABEL_STRING[type] + "\tminute" + minute);
+            myDataBase.addOneMeasureData(
                     measureDataList.get(type), type, date, userId);
             measureDataList.get(type).reset();
         }

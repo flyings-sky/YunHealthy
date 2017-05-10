@@ -3,9 +3,13 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/lightSeaGreen</item>
-        <item name="colorPrimaryDark">@color/lightSeaGreen</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.TitleTextViewStyle" parent="TextAppearance.AppCompat.Widget.TextView.SpinnerItem">
+        <item name="textSize">@dimen/text_title_largest</item>
     </style>
 
     <style name="PopupAnimation" parent="android:Animation">
@@ -26,9 +30,13 @@
         <item name="android:layout_height">match_parent</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 
     <style name="TransparentText_large">
         <item name="android:textSize">24sp</item>
@@ -40,5 +48,31 @@
         <item name="android:textSize">20sp</item>
         <item name="android:layout_marginStart">48dp</item>
         <item name="android:layout_marginEnd">24dp</item>
+    </style>
+
+    <style name="ActivityTheme" parent="AppTheme">
+        <item name="android:windowBackground">@color/white</item>
+        <!--设置窗口透明-->
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
+    <style name="AppTheme.TabLayoutTextStyle"
+           parent="TextAppearance.AppCompat">
+        <item name="android:textSize">125px</item>
+    </style>
+
+    <style name="Animation">
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+        <item name="android:taskOpenEnterAnimation">@null</item>
+        <item name="android:taskOpenExitAnimation">@null</item>
+        <item name="android:taskCloseEnterAnimation">@null</item>
+        <item name="android:taskCloseExitAnimation">@null</item>
+        <item name="android:taskToFrontEnterAnimation">@null</item>
+        <item name="android:taskToFrontExitAnimation">@null</item>
+        <item name="android:taskToBackEnterAnimation">@null</item>
+        <item name="android:taskToBackExitAnimation">@null</item>
     </style>
 </resources>

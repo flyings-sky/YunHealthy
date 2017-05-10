@@ -6,7 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -16,9 +15,9 @@ import android.util.Log;
 import java.util.Calendar;
 
 import wang.fly.com.yunhealth.DataBasePackage.MyDataBase;
-import wang.fly.com.yunhealth.MainActivity;
 import wang.fly.com.yunhealth.R;
 import wang.fly.com.yunhealth.ReceiverPackage.UpLoadReceiver;
+import wang.fly.com.yunhealth.util.MyConstants;
 import wang.fly.com.yunhealth.util.UtilClass;
 
 /**
@@ -41,7 +40,7 @@ public class UpLoadService extends Service{
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        int type = intent.getIntExtra("type", MainActivity.RECEIVER_TYPE_UPLOAD);
+        int type = intent.getIntExtra("type", MyConstants.RECEIVER_TYPE_UPLOAD);
         boolean isFirstStart = intent.getBooleanExtra("isFirst", false);
         Log.d(TAG, "onStartCommand: isFirstStart" + isFirstStart);
         new Thread(new Runnable() {
@@ -59,9 +58,8 @@ public class UpLoadService extends Service{
                     makeANotification("您还没有登录");
                 }
                 MyDataBase myDataBase = new MyDataBase(getApplicationContext(),
-                        "LocalStore.db", null, MainActivity.DATABASE_VERSION);
-                SQLiteDatabase database = myDataBase.getWritableDatabase();
-                int count = myDataBase.upLoadMeasureData(database, id);
+                        "LocalStore.db", null, MyConstants.DATABASE_VERSION);
+                int count = myDataBase.upLoadMeasureData(id);
                 if (count == MyDataBase.ERROR_LOAD){
                     makeANotification("测量信息上传失败");
                 }else if (count == 0){
@@ -76,13 +74,13 @@ public class UpLoadService extends Service{
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         Log.d(TAG, "onStartCommand: nowTime " + UtilClass.valueOfCalendar(calendar));
-        if (calendar.get(Calendar.MINUTE) < MainActivity.LOAD_CACHE_MINUTE){
-            calendar.set(Calendar.MINUTE, MainActivity.LOAD_CACHE_MINUTE);
+        if (calendar.get(Calendar.MINUTE) < MyConstants.LOAD_CACHE_MINUTE){
+            calendar.set(Calendar.MINUTE, MyConstants.LOAD_CACHE_MINUTE);
             calendar.set(Calendar.SECOND, 0);
             calendar.set(Calendar.MILLISECOND, 0);
         }else{
             calendar.set(Calendar.HOUR_OF_DAY, calendar.get(Calendar.HOUR_OF_DAY) + 1);
-            calendar.set(Calendar.MINUTE, MainActivity.LOAD_CACHE_MINUTE);
+            calendar.set(Calendar.MINUTE, MyConstants.LOAD_CACHE_MINUTE);
             calendar.set(Calendar.SECOND, 0);
             calendar.set(Calendar.MILLISECOND, 0);
         }
@@ -108,8 +106,8 @@ public class UpLoadService extends Service{
                 .setAutoCancel(true)
                 .setOngoing(false)
                 .setDefaults(Notification.DEFAULT_ALL)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon_healthy))
-                .setSmallIcon(R.drawable.test_icon);
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_launcher);
         Notification no = mBuilder.build();
         manager.notify(1, no);
     }
