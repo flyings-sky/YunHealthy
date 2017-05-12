@@ -3,10 +3,15 @@
 buildscript {
     repositories {
         jcenter()
+        //这里是 LeanCloud 的包仓库
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
+        }
+
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:2.3.1'
 
         classpath 'com.jakewharton:butterknife-gradle-plugin:8.5.1'
         // NOTE: Do not place your application dependencies here; they belong
@@ -19,12 +24,17 @@ allprojects {
         jcenter()
         //Bmob的maven仓库地址--必填
         maven { url "https://raw.github.com/bmob/bmob-android-sdk/master" }
+        //这里是 LeanCloud 的包仓库
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
+        }
         gradle.projectsEvaluated {
             tasks.withType(JavaCompile){
                 options.compilerArgs << "-Xmaxerrs" << "1000"
 //                options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
             }
         }
+
     }
 }
 

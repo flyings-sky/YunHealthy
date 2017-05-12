@@ -3,6 +3,9 @@ package wang.fly.com.yunhealth.util;
 import android.app.Application;
 import android.content.Context;
 import android.os.Environment;
+import android.support.multidex.MultiDex;
+
+import com.avos.avoscloud.AVOSCloud;
 
 import java.io.File;
 
@@ -11,6 +14,7 @@ import cn.bmob.v3.BmobConfig;
 import cn.smssdk.SMSSDK;
 
 /**
+ *
  * Created by noclay on 2017/4/15.
  */
 
@@ -24,6 +28,14 @@ public class MyApplication extends Application {
         sContext = getApplicationContext();
         initDir();
         initDependencies();
+        initIM();
+    }
+
+    private void initIM() {
+        // 初始化参数依次为 this, AppId, AppKey
+        AVOSCloud.initialize(this,"l5CVYhd0SuDev52kXp2JK9pf-gzGzoHsz","Kenvb31EVgcqrNX1ELxL87J7");
+        // 放在 SDK 初始化语句 AVOSCloud.initialize() 后面，只需要调用一次即可
+        AVOSCloud.setDebugLogEnabled(true);
     }
 
     private void initDir() {
@@ -52,6 +64,12 @@ public class MyApplication extends Application {
         Bmob.initialize(config);
         //初始化Mob
         SMSSDK.initSDK(this, "195be1e7755e2", "5bdd8a14d2e2f5734797443c982b0db4");
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(base);
     }
 
 }

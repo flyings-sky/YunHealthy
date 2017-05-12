@@ -12,7 +12,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.bumptech.glide.Glide;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -202,7 +201,7 @@ public class LoginActivityCopy extends
 
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
-        boolean isEmpty = ((EditText) v).getText().length() == 0 ? true : false;
+        boolean isEmpty = ((EditText) v).getText().length() == 0;
         switch (v.getId()){
             case R.id.userName:{
                 if (hasFocus && !isEmpty){
