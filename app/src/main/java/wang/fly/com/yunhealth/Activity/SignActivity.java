@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,8 +20,13 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.List;
+import com.avos.avoscloud.AVException;
+import com.avos.avoscloud.AVInstallation;
+import com.avos.avoscloud.AVUser;
+import com.avos.avoscloud.SaveCallback;
+import com.avos.avoscloud.SignUpCallback;
 
+import java.util.List;
 import cn.bmob.v3.BmobQuery;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
@@ -30,9 +36,13 @@ import cn.smssdk.OnSendMessageHandler;
 import cn.smssdk.SMSSDK;
 import wang.fly.com.yunhealth.DataBasePackage.SignUserData;
 import wang.fly.com.yunhealth.R;
+import wang.fly.com.yunhealth.util.IMUtils.CacheUtil;
+
+import static wang.fly.com.yunhealth.util.IMUtils.QueryUtilField.*;
+import static wang.fly.com.yunhealth.util.IMUtils.LogUtil.*;
+import static wang.fly.com.yunhealth.util.IMUtils.Util.isExistUser;
 
 public class SignActivity extends AppCompatActivity implements View.OnClickListener{
-
     private static final String TAG = "SignFirstStep";
     private ImageView cancelButton;
     private EditText signUserName;
@@ -49,6 +59,8 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
     private static final int MSG_WHAT_FOR_THREAD = 0;
     private static final int MSG_WHAT_FOR_THREAD_DEATH = 2;
     private static final int MSG_WHAT_FOT_SHORT_MESSAGE = 1;
+    private String installationId;//安装应用设备的ID
+    private String sex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,17 +121,29 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+            @SuppressWarnings("deprecation")
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if (isMobileNum(signUserPhoneNumber.getText().toString())) {
                     //发送短信
                     sendMessage.setClickable(true);
-                    sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def,
-                            getTheme()));
+                    if(Build.VERSION.SDK_INT >= 21){
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def,
+                                getTheme()));
+                    }else {
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def));
+                    }
+
                 } else {
                     sendMessage.setClickable(false);
-                    sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2,
-                            getTheme()));
+                    if(Build.VERSION.SDK_INT >= 21)
+                    {
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2,
+                                getTheme()));
+                    }else {
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2));
+                    }
+
 
                 }
             }
@@ -172,9 +196,12 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             }
             case R.id.completeSign: {
+                //检查该用户名是否已经注册
                 if (signUserName.getText().toString().length() > 20
                         || signUserName.getText().toString().length() <= 0) {
                     Toast.makeText(context, "姓名过长或过短", Toast.LENGTH_SHORT).show();
+                } else if(isExistUser(signUserName.getText().toString())){
+                    toastShort(context,"用户名已经注册");
                 } else if (signUserPassWord.getText().toString().length() > 16 || signUserPassWord.
                         getText().toString().length() < 6) {
                     Toast.makeText(context, "密码过长或过短", Toast.LENGTH_SHORT).show();
@@ -205,6 +232,7 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     Handler handler = new Handler() {
+        @SuppressWarnings("deprecation")
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void handleMessage(Message msg) {
@@ -213,14 +241,22 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
                 case MSG_WHAT_FOR_THREAD: {
                     sendMessage.setClickable(false);
                     sendMessage.setText(msg.arg1 + "秒后可获取验证码");
-                    sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2, getTheme()));
+                    if(Build.VERSION.SDK_INT >= 21){
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2, getTheme()));
+                    }else {
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_2));
+                    }
                     break;
                 }
                 case MSG_WHAT_FOR_THREAD_DEATH: {
 //                    Log.d(TAG, "handleMessage() called with: " + "线程死亡");
                     sendMessage.setClickable(true);
                     sendMessage.setText("获取验证码");
-                    sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def, getTheme()));
+                    if(Build.VERSION.SDK_INT >= 21){
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def, getTheme()));
+                    }else {
+                        sendMessage.setBackground(getResources().getDrawable(R.drawable.circle_button_def));
+                    }
                     break;
                 }
                 case MSG_WHAT_FOT_SHORT_MESSAGE: {
@@ -283,15 +319,46 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
         sign.setUserName(signUserName.getText().toString());//设置昵称
         if (cur == 1) {//设置性别
             sign.setMan(true);
+            sex = "男";
         } else if (cur == -1) {
             sign.setMan(false);
+            sex = "女";
         }
         sign.save(new SaveListener<String>() {
             @Override
             public void done(String s, BmobException e) {
                 if (e == null) {
-                    Toast.makeText(context, "注册成功，即将跳转到登录界面", Toast.LENGTH_SHORT).show();
-                    setResultBack(true);
+                    /**
+                     * 添加了在LeanCloud端注册用户的逻辑
+                     */
+                    AVInstallation.getCurrentInstallation().saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(AVException e) {
+                            if(e == null){
+                                installationId = AVInstallation.getCurrentInstallation().getInstallationId();
+                                CacheUtil.putInstallId(installationId);
+                            }else {
+                                Log.e("Click",e.getMessage());
+                            }
+                        }
+                    });
+                    AVUser user = new AVUser();
+                    user.setUsername(signUserName.getText().toString());
+                    user.setPassword(signUserPassWord.getText().toString());
+                    user.setMobilePhoneNumber(signUserPhoneNumber.getText().toString());
+                    user.put(DEVICE_INSTALL_ID,installationId);
+                    user.put(USER_SEX,sex);
+                    user.signUpInBackground(new SignUpCallback() {
+                        @Override
+                        public void done(AVException e) {
+                            if(e == null){
+                                Toast.makeText(context, "注册成功，即将跳转到登录界面", Toast.LENGTH_SHORT).show();
+                                setResultBack(true);
+                            }else {
+                                return;
+                            }
+                        }
+                    });
                 } else {
                     Toast.makeText(context, "注册失败，请稍后重试", Toast.LENGTH_SHORT).show();
                     completeSignButton.setClickable(true);

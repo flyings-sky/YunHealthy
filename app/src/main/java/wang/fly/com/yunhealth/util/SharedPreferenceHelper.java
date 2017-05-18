@@ -8,6 +8,7 @@ import wang.fly.com.yunhealth.DataBasePackage.SignUserData;
 import static android.content.Context.MODE_PRIVATE;
 
 /**
+ *
  * Created by noclay on 2017/4/16.
  */
 
