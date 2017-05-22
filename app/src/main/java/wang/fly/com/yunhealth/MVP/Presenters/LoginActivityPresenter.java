@@ -2,19 +2,27 @@ package wang.fly.com.yunhealth.MVP.Presenters;
 
 import android.content.Context;
 
+import com.avos.avoscloud.AVException;
+import com.avos.avoscloud.AVUser;
+import com.avos.avoscloud.LogInCallback;
+
 import java.util.List;
 
 import cn.bmob.v3.BmobQuery;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
+import wang.fly.com.yunhealth.Activity.LoginActivityCopy;
 import wang.fly.com.yunhealth.DataBasePackage.SignUserData;
 import wang.fly.com.yunhealth.MVP.Bases.BasePresenter;
 import wang.fly.com.yunhealth.MVP.Views.LoginActivityInterface;
+import wang.fly.com.yunhealth.util.IMUtils.CacheUtil;
+import wang.fly.com.yunhealth.util.IMUtils.LogUtil;
 import wang.fly.com.yunhealth.util.MyApplication;
 import wang.fly.com.yunhealth.util.SharedPreferenceHelper;
 import wang.fly.com.yunhealth.util.UtilClass;
 
 /**
+ *
  * Created by noclay on 2017/4/15.
  */
 
@@ -65,16 +73,44 @@ public class LoginActivityPresenter extends BasePresenter<LoginActivityInterface
             if (user.getPassWord().compareTo(password) != 0){
                 getView().loginFailed("密码错误");
             }else{
-                getView().loginFailed("登录成功");
-                SharedPreferenceHelper.editLoginState(user, true);
-                getView().loginSuccess();
+                //LeanCloud用户登录
+                AVUser.logInInBackground(user.getUserName(), user.getPhoneNumber(),
+                        new LogInCallback<AVUser>() {
+                    @Override
+                    public void done(AVUser avUser, AVException e) {
+                        if(e == null){
+                            getView().loginFailed("登录成功");
+                            LogUtil.LogD("登陆LeanCloud成功");
+                            SharedPreferenceHelper.editLoginState(user, true);
+                            getView().loginSuccess();
+                        }else {
+                            getView().loginFailed("登录失败");
+                            LogUtil.LogD("登陆LeanCloud失败"+e.getMessage());
+                        }
+                    }
+                });
+
             }
         }
     }
 
     public void loginIfRemember(){
         if (SharedPreferenceHelper.isLogin()){
-            getView().loginSuccess();
+            //如果记住登录状态，直接进行LeanCloud登录
+            LogUtil.LogD(""+CacheUtil.getTelePhone());
+            AVUser.logInInBackground(CacheUtil.getUserName(),CacheUtil.getTelePhone(),
+                    new LogInCallback<AVUser>() {
+                        @Override
+                        public void done(AVUser avUser, AVException e) {
+                            if(e == null){
+                                getView().loginSuccess();
+                                LogUtil.LogD("登陆LeanCloud成功");
+                            }else {
+                                getView().loginFailed("登录失败");
+                                LogUtil.LogD("登陆LeanCloud失败"+e.getMessage());
+                            }
+                        }
+                    });
         }
     }
 //

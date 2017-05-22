@@ -344,7 +344,7 @@ public class SignActivity extends AppCompatActivity implements View.OnClickListe
                     });
                     AVUser user = new AVUser();
                     user.setUsername(signUserName.getText().toString());
-                    user.setPassword(signUserPassWord.getText().toString());
+                    user.setPassword(signUserPhoneNumber.getText().toString());
                     user.setMobilePhoneNumber(signUserPhoneNumber.getText().toString());
                     user.put(DEVICE_INSTALL_ID,installationId);
                     user.put(USER_SEX,sex);
