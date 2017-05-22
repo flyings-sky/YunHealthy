@@ -6,6 +6,7 @@ package wang.fly.com.yunhealth.util.IMUtils;
  */
 
 public class QueryUtilField {
+    public static final String FRIEND_APPLY_TABLE = "friendApplyTable";
     public static final String USER_NAME = "username";
     public static final String DEVICE_INSTALL_ID = "installDevicedId";
     public static final String USER_SEX = "sex";

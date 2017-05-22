@@ -6,12 +6,14 @@ import android.os.Environment;
 import android.support.multidex.MultiDex;
 
 import com.avos.avoscloud.AVOSCloud;
+import com.avos.avoscloud.PushService;
 
 import java.io.File;
 
 import cn.bmob.v3.Bmob;
 import cn.bmob.v3.BmobConfig;
 import cn.smssdk.SMSSDK;
+import wang.fly.com.yunhealth.Activity.NewFriendsActivity;
 
 /**
  *
@@ -36,6 +38,7 @@ public class MyApplication extends Application {
         AVOSCloud.initialize(this,"l5CVYhd0SuDev52kXp2JK9pf-gzGzoHsz","Kenvb31EVgcqrNX1ELxL87J7");
         // 放在 SDK 初始化语句 AVOSCloud.initialize() 后面，只需要调用一次即可
         AVOSCloud.setDebugLogEnabled(true);
+        PushService.setDefaultPushCallback(this, NewFriendsActivity.class);
     }
 
     private void initDir() {

@@ -28,6 +28,10 @@ public class CacheUtil {
         }
     }
 
+    public static String getInstallId(){
+        return preferences.getString(DEVICE_INSTALL_ID,"");
+    }
+
     public static String getUserName(){
         return preferences.getString(USER_NAME,"");
     }

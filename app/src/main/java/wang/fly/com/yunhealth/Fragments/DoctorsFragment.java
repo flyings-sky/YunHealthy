@@ -1,5 +1,6 @@
 package wang.fly.com.yunhealth.Fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -8,23 +9,27 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import wang.fly.com.yunhealth.Activity.FindFriendsActivity;
 import wang.fly.com.yunhealth.R;
 import wang.fly.com.yunhealth.util.TabLayoutViewPagerAdapter;
 
 /**
+ *  IM功能的主要界面
  * Created by 兆鹏 on 2016/11/2.
  */
 public class DoctorsFragment extends Fragment implements
         View.OnClickListener,
         ViewPager.OnPageChangeListener {
+    private ImageView mImagePlus;//添加功能
     private View view;
     private RelativeLayout mSearchBar;
-    private RelativeLayout mNewFriends;
+    private RelativeLayout mNewFriends;//新的好友界面
     private TabLayout mTabLayout;
     private ViewPager mPageLayout;
     private TabLayout mChanelTab;
@@ -49,11 +54,13 @@ public class DoctorsFragment extends Fragment implements
         mSearchBar.setOnClickListener(this);
         mNewFriends = (RelativeLayout) v.findViewById(R.id.newFriends);
         mNewFriends.setOnClickListener(this);
+        mImagePlus = (ImageView) v.findViewById(R.id.plus);
+        mImagePlus.setOnClickListener(this);
         mTabLayout = (TabLayout) v.findViewById(R.id.tabLayout);
         mPageLayout = (ViewPager) v.findViewById(R.id.pageLayout);
         mChanelTab = (TabLayout) v.findViewById(R.id.chanelTab);
         mTitles = new ArrayList<>();
-        mPages = new ArrayList<Fragment>();
+        mPages = new ArrayList<>();
         for (int i = 0; i < CHANELS.length; i++) {
             mChanelTab.addTab(mChanelTab.newTab().setText(CHANELS[i]));
             mTitles.add(CHANELS[i]);
@@ -76,6 +83,10 @@ public class DoctorsFragment extends Fragment implements
             case R.id.search_bar:
                 break;
             case R.id.newFriends:
+                break;
+            case R.id.plus:
+                Intent intent = new Intent(getActivity(), FindFriendsActivity.class);
+                startActivity(intent);
                 break;
         }
     }

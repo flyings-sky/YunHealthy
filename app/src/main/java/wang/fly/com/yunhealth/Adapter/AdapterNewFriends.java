@@ -15,6 +15,7 @@ import com.avos.avoscloud.AVObject;
 import com.avos.avoscloud.AVPush;
 import com.avos.avoscloud.AVQuery;
 import com.avos.avoscloud.AVUser;
+import com.avos.avoscloud.FollowCallback;
 import com.avos.avoscloud.SaveCallback;
 import com.avos.avoscloud.SendCallback;
 import com.bumptech.glide.Glide;
@@ -24,8 +25,9 @@ import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Map;
+
 import wang.fly.com.yunhealth.R;
-import wang.fly.com.yunhealth.util.IMUtils.LogUtil;
+import wang.fly.com.yunhealth.util.IMUtils.QueryUtilField;
 
 import static wang.fly.com.yunhealth.util.IMUtils.LogUtil.LogD;
 import static wang.fly.com.yunhealth.util.IMUtils.LogUtil.toastShort;
@@ -33,18 +35,17 @@ import static wang.fly.com.yunhealth.util.IMUtils.QueryUtilField.DEVICE_INSTALL_
 import static wang.fly.com.yunhealth.util.IMUtils.QueryUtilField.FRIEND_APPLY_TABLE;
 
 
-
 /**
  * 添加好友界面的适配器
  * Created by 兆鹏 on 2017/5/22.
  */
 
-public class AdapterFindNewFriends extends BaseAdapter {
+public class AdapterNewFriends extends BaseAdapter {
     private Context mContext;
     private LayoutInflater inflater;
     private List<Map<String,Object>> list;
     private int layout;
-    public AdapterFindNewFriends(Context context, List<Map<String,Object>> list, int layout){
+    public AdapterNewFriends(Context context, List<Map<String,Object>> list, int layout){
         this.mContext = context;
         this.inflater = LayoutInflater.from(mContext);
         this.list = list;
@@ -74,79 +75,76 @@ public class AdapterFindNewFriends extends BaseAdapter {
             viewHolder = new ViewHolder();
             viewHolder.imUserHead = (ImageView) convertView.findViewById(R.id.id_item_new_friends_pic);
             viewHolder.tvUserName = (TextView) convertView.findViewById(R.id.id_item_new_friends_name);
-            viewHolder.btAddFriend = (Button) convertView.findViewById(R.id.id_item_new_friends_add);
+            viewHolder.btAgree = (Button) convertView.findViewById(R.id.id_item_new_friends_agree);
+            viewHolder.btDisagree = (Button) convertView.findViewById(R.id.id_item_new_friends_reject);
             convertView.setTag(viewHolder);
         }else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
-        final String name = (String) list.get(position).get("userName");
-        final String uri = (String) list.get(position).get("userPic");
-        final String installId = (String) list.get(position).get("installId");
-        final String myInstallId = (String) AVUser.getCurrentUser().get(DEVICE_INSTALL_ID);
+        final String name = (String) list.get(position).get("name");
+        final String uri = (String) list.get(position).get("img");
+        int status = (int) list.get(position).get("status");
+        final String installId = (String) list.get(position).get("DeviceId");
+        final String userId = (String) list.get(position).get("userId");
+        final String objId = (String) list.get(position).get("objId");
         viewHolder.tvUserName.setText(name);
-        viewHolder.btAddFriend.setText((CharSequence) list.get(position).get("btAdd"));
-
         if(uri != null){
             Glide.with(mContext).load(uri).placeholder(R.mipmap.ic_launcher).into(viewHolder.imUserHead);
         }
-
-        final ViewHolder finalViewHolder = viewHolder;
-        viewHolder.btAddFriend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(v.isEnabled()){
-                    AVObject friendApply = new AVObject(FRIEND_APPLY_TABLE);
-                    friendApply.put("requestName", AVUser.getCurrentUser().getUsername());
-                    friendApply.put("receiverName",name);
-                    friendApply.put("imgUri",uri);
-                    friendApply.put("status",0);
-                    friendApply.put(DEVICE_INSTALL_ID, myInstallId);
-                    friendApply.saveInBackground(new SaveCallback() {
+        //如果为1，则表示已同意
+        if(status == 1){
+            viewHolder.btAgree.setVisibility(View.GONE);
+            viewHolder.btDisagree.setEnabled(false);
+            viewHolder.btDisagree.setText("已同意");
+        }else if(status == 2){//如果为2，则表示已拒绝
+            viewHolder.btAgree.setVisibility(View.GONE);
+            viewHolder.btDisagree.setEnabled(false);
+            viewHolder.btDisagree.setText("已回绝");
+        }else {
+            final ViewHolder finalViewHolder = viewHolder;
+            viewHolder.btAgree.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AVUser.getCurrentUser().followInBackground(userId, new FollowCallback() {
                         @Override
-                        public void done(AVException e) {
-                            if(e == null){
-                                AVQuery query = AVInstallation.getQuery();
-                                query.whereEqualTo("installationId",installId);
-                                AVPush push = new AVPush();
-                                JSONObject object = new JSONObject();
-                                try {
-                                    object.put("name",name);
-                                    object.put("imageUri",uri);
-                                    object.put("installId",myInstallId);
-                                    push.setData(object);
-                                    push.setPushToAndroid(true);
-                                    push.setQuery(query);
-                                    push.sendInBackground(new SendCallback() {
-                                        @Override
-                                        public void done(AVException e) {
-                                            if(e == null){
-                                                finalViewHolder.btAddFriend.setEnabled(false);
-                                                finalViewHolder.btAddFriend.setText("已申请");
-                                                toastShort(mContext,"申请发送成功");
-                                            }else {
-                                                LogD("Push:推送失败"+e.getMessage());
-                                            }
-                                        }
-                                    });
-                                } catch (JSONException e1) {
-                                    e1.printStackTrace();
-                                }
+                        public void done(AVObject avObject, AVException e) {
+                            if (e == null) {
+                                LogD("follow succeed!");
+                                AVObject object = AVObject.createWithoutData(QueryUtilField.FRIEND_APPLY_TABLE,objId);
+                                object.put("status",1);
+                                object.saveInBackground();
+                                finalViewHolder.btAgree.setVisibility(View.GONE);
+                                finalViewHolder.btDisagree.setEnabled(false);
+                                finalViewHolder.btDisagree.setText("已同意");
+                            } else if (e.getCode() == AVException.DUPLICATE_VALUE) {
+                                LogD("Already followed.");
                             }else {
-                                toastShort(mContext,"发送失败，请重试");
-                                LogD("saveFriendApply:"+e.getMessage());
+                                LogD("follow:"+e.getMessage());
                             }
                         }
                     });
-
                 }
-            }
-        });
+            });
+
+            viewHolder.btDisagree.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AVObject object = AVObject.createWithoutData(QueryUtilField.FRIEND_APPLY_TABLE,objId);
+                    object.put("status",2);
+                    object.saveInBackground();
+                    finalViewHolder.btAgree.setVisibility(View.GONE);
+                    finalViewHolder.btDisagree.setEnabled(false);
+                    finalViewHolder.btDisagree.setText("已回绝");
+                }
+            });
+        }
         return convertView;
     }
 
     static class ViewHolder{
         TextView tvUserName;
         ImageView imUserHead;
-        Button btAddFriend;
+        Button btAgree;
+        Button btDisagree;
     }
 }

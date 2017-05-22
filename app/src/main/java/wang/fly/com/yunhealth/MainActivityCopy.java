@@ -13,6 +13,8 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 
+import com.avos.avoscloud.AVUser;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -151,5 +153,11 @@ public class MainActivityCopy extends AppCompatActivity {
         mInputWeightDialog.showAtLocation(findViewById(R.id.main_activity),
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        AVUser.getCurrentUser().logOut();
     }
 }

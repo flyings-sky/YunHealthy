@@ -1,10 +1,13 @@
 package wang.fly.com.yunhealth.MVP.Presenters;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.avos.avoscloud.AVException;
+import com.avos.avoscloud.AVInstallation;
 import com.avos.avoscloud.AVUser;
 import com.avos.avoscloud.LogInCallback;
+import com.avos.avoscloud.SaveCallback;
 
 import java.util.List;
 
@@ -73,6 +76,20 @@ public class LoginActivityPresenter extends BasePresenter<LoginActivityInterface
             if (user.getPassWord().compareTo(password) != 0){
                 getView().loginFailed("密码错误");
             }else{
+                //如果Cache里面不存在InstallId，就保存InstallId到缓存
+                if(CacheUtil.getInstallId().equals("")){
+                    AVInstallation.getCurrentInstallation().saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(AVException e) {
+                            if(e == null){
+                                String installationId = AVInstallation.getCurrentInstallation().getInstallationId();
+                                CacheUtil.putInstallId(installationId);
+                            }else {
+                                LogUtil.LogD("login:install"+ e.getMessage());
+                            }
+                        }
+                    });
+                }
                 //LeanCloud用户登录
                 AVUser.logInInBackground(user.getUserName(), user.getPhoneNumber(),
                         new LogInCallback<AVUser>() {
@@ -97,7 +114,6 @@ public class LoginActivityPresenter extends BasePresenter<LoginActivityInterface
     public void loginIfRemember(){
         if (SharedPreferenceHelper.isLogin()){
             //如果记住登录状态，直接进行LeanCloud登录
-            LogUtil.LogD(""+CacheUtil.getTelePhone());
             AVUser.logInInBackground(CacheUtil.getUserName(),CacheUtil.getTelePhone(),
                     new LogInCallback<AVUser>() {
                         @Override

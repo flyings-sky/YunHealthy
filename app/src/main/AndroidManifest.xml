@@ -61,6 +61,8 @@
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:windowSoftInputMode="stateHidden|adjustResize"/>
+        <activity android:name=".Activity.FindFriendsActivity"/>
+        <activity android:name=".Activity.NewFriendsActivity"/>
         <!-- 显示心电图的活动 -->
         <activity
             android:name=".Activity.ShowHeartWaves"

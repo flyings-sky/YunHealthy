@@ -23,16 +23,26 @@
         android:gravity="center"
         android:layout_centerVertical="true"
         />
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_marginRight="30dp"
-        android:text="添加好友"
+        android:layout_marginRight="15dp"
+        android:text="拒绝"
         android:textColor="@color/white"
         android:background="@drawable/btn_bg_selector"
-        android:id="@+id/id_item_new_friends_add"
+        android:id="@+id/id_item_new_friends_reject"
+        android:layout_centerVertical="true"
+        />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@+id/id_item_new_friends_reject"
+        android:layout_marginRight="10dp"
+        android:text="同意"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_bg_selector"
+        android:id="@+id/id_item_new_friends_agree"
         android:layout_centerVertical="true"
         />
 
